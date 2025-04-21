@@ -1,3 +1,5 @@
+mod refs;
+
 fn main() {
     let arr = [2, 4, 8, 16];
 
