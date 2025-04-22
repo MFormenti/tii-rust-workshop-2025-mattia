@@ -355,12 +355,9 @@ mod tests {
         let result_with_triangle =
             find_biggest_ratio::<Circle, Triangle>(&shapes1, &triangle_array);
 
-        match result_with_triangle {
-            Some(ShapeSource::SecondSlice(shape)) => {
-                assert_eq!(shape.perimeter(), 12.0);
-                assert_eq!(shape.area(), 6.0);
-            }
-            _ => {}
+        if let Some(ShapeSource::SecondSlice(shape)) = result_with_triangle {
+            assert_eq!(shape.perimeter(), 12.0);
+            assert_eq!(shape.area(), 6.0);
         }
 
         assert!(result.is_some() || result_with_triangle.is_some());
