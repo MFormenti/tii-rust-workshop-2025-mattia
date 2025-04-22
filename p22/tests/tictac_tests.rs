@@ -63,14 +63,11 @@ fn test_horizontal_win() {
 #[test]
 fn test_vertical_win() {
     let player_x = Player::new(CellState::X);
-    let player_o = Player::new(CellState::O);
     let mut board = TicTacToeField::new();
 
     // Player X fills the left column
     board = board.make_move(0, 0, &player_x).unwrap();
-    board = board.make_move(1, 0, &player_o).unwrap(); // Player O's move
     board = board.make_move(1, 0, &player_x).unwrap();
-    board = board.make_move(1, 1, &player_o).unwrap(); // Player O's move
     board = board.make_move(2, 0, &player_x).unwrap();
 
     // X should win with a vertical line on the left

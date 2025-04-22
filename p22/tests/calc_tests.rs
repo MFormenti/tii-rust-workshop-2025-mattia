@@ -1,4 +1,3 @@
-
 use p22::calc::{celsius2farnheit, farnheit2celsius, fibonacci_loop, fibonacci_rec};
 
 #[test]
@@ -40,8 +39,12 @@ fn test_celsius_fahrenheit_roundtrip() {
         // Due to integer division, we might lose some precision in the roundtrip
         // So we check if the difference is at most 1 degree
         let roundtrip = farnheit2celsius(celsius2farnheit(temp));
-        assert!((roundtrip - temp).abs() <= 1,
-                "Round-trip conversion failed for {}°C: got {}°C", temp, roundtrip);
+        assert!(
+            (roundtrip - temp).abs() <= 1,
+            "Round-trip conversion failed for {}°C: got {}°C",
+            temp,
+            roundtrip
+        );
     }
 }
 
@@ -87,7 +90,8 @@ fn test_fibonacci_implementations_match() {
         assert_eq!(
             fibonacci_loop(n),
             fibonacci_rec(n),
-            "Implementations differ at n={}", n
+            "Implementations differ at n={}",
+            n
         );
     }
 }
