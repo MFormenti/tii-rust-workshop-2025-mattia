@@ -1,7 +1,6 @@
 [package]
-name = "p12"
+name = "p32"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-typenum = "1"
