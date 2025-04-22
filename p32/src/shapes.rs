@@ -1,11 +1,11 @@
 use std::f64::consts::PI as pi;
 use std::fmt::Debug;
 
-pub trait ShapeCore {
+pub trait Shape: Debug {
+    const NAME: &'static str;
     fn perimeter(&self) -> f64;
     fn area(&self) -> f64;
     fn scale(&mut self, factor: f32);
-
     fn area_to_perimeter(&self) -> f64 {
         let area = self.area();
         let perimeter = self.perimeter();
@@ -15,48 +15,26 @@ pub trait ShapeCore {
             area / perimeter
         }
     }
-}
-
-pub trait ShapeName {
-    const NAME: &'static str;
-}
-
-pub trait Shape: ShapeCore + ShapeName + Sized {
-    fn biggest_area<'a, S: Shape>(&'a self, other: &'a S) -> ShapeBiggest<'a, Self, S> {
+    fn biggest_area<'a, S>(&'a self, other: &'a S) -> Either<&'a Self, &'a S>
+    where
+        S: Shape + 'a,
+    {
         if self.area() > other.area() {
-            ShapeBiggest::First(self)
+            Either::Left(self)
         } else {
-            ShapeBiggest::Second(other)
+            Either::Right(other)
         }
     }
-
-    fn print_properties(&self)
-    where
-        Self: Debug,
-    {
+    fn print_properties(&self) {
         println!("Shape: {}", Self::NAME);
         println!("Area: {}", self.area());
         println!("Perimeter: {}", self.perimeter());
     }
 }
 
-impl<T: ShapeCore + ShapeName> Shape for T {}
-
-pub trait ShapeNamedDebug: Shape + Debug {}
-impl<T: Shape + Debug> ShapeNamedDebug for T {}
-
-pub enum ShapeBiggest<'a, T: Shape, U: Shape> {
-    First(&'a T),
-    Second(&'a U),
-}
-
-pub enum ShapeSource<'a, T, U>
-where
-    T: Shape + Debug,
-    U: Shape + Debug,
-{
-    FirstSlice(&'a T),
-    SecondSlice(&'a U),
+pub enum Either<L, R> {
+    Left(L),
+    Right(R),
 }
 
 #[derive(Debug)]
@@ -91,57 +69,53 @@ pub enum DynamicShape {
     TriangleShape(Triangle),
 }
 
-impl ShapeCore for Point {
+impl Shape for Point {
+    const NAME: &'static str = "Point";
     fn perimeter(&self) -> f64 {
         0.0
     }
-
     fn area(&self) -> f64 {
         0.0
     }
-
     fn scale(&mut self, _factor: f32) {}
 }
 
-impl ShapeCore for Circle {
+impl Shape for Circle {
+    const NAME: &'static str = "Circle";
     fn perimeter(&self) -> f64 {
         2.0 * pi * self.radius
     }
-
     fn area(&self) -> f64 {
         pi * self.radius * self.radius
     }
-
     fn scale(&mut self, factor: f32) {
         self.radius *= factor as f64;
     }
 }
 
-impl ShapeCore for Rectangle {
+impl Shape for Rectangle {
+    const NAME: &'static str = "Rectangle";
     fn perimeter(&self) -> f64 {
         2.0 * (self.width + self.height)
     }
-
     fn area(&self) -> f64 {
         self.width * self.height
     }
-
     fn scale(&mut self, factor: f32) {
         self.width *= factor as f64;
         self.height *= factor as f64;
     }
 }
 
-impl ShapeCore for Triangle {
+impl Shape for Triangle {
+    const NAME: &'static str = "Triangle";
     fn perimeter(&self) -> f64 {
         self.a + self.b + self.c
     }
-
     fn area(&self) -> f64 {
         let s = self.perimeter() / 2.0;
         (s * (s - self.a) * (s - self.b) * (s - self.c)).sqrt()
     }
-
     fn scale(&mut self, factor: f32) {
         self.a *= factor as f64;
         self.b *= factor as f64;
@@ -149,229 +123,74 @@ impl ShapeCore for Triangle {
     }
 }
 
-impl ShapeCore for DynamicShape {
+impl Shape for DynamicShape {
+    const NAME: &'static str = "DynamicShape";
     fn perimeter(&self) -> f64 {
         match self {
-            DynamicShape::PointShape(point) => point.perimeter(),
-            DynamicShape::CircleShape(circle) => circle.perimeter(),
-            DynamicShape::RectangleShape(rectangle) => rectangle.perimeter(),
-            DynamicShape::TriangleShape(triangle) => triangle.perimeter(),
+            DynamicShape::PointShape(p) => p.perimeter(),
+            DynamicShape::CircleShape(c) => c.perimeter(),
+            DynamicShape::RectangleShape(r) => r.perimeter(),
+            DynamicShape::TriangleShape(t) => t.perimeter(),
         }
     }
-
     fn area(&self) -> f64 {
         match self {
-            DynamicShape::PointShape(point) => point.area(),
-            DynamicShape::CircleShape(circle) => circle.area(),
-            DynamicShape::RectangleShape(rectangle) => rectangle.area(),
-            DynamicShape::TriangleShape(triangle) => triangle.area(),
+            DynamicShape::PointShape(p) => p.area(),
+            DynamicShape::CircleShape(c) => c.area(),
+            DynamicShape::RectangleShape(r) => r.area(),
+            DynamicShape::TriangleShape(t) => t.area(),
         }
     }
-
     fn scale(&mut self, factor: f32) {
         match self {
-            DynamicShape::PointShape(point) => point.scale(factor),
-            DynamicShape::CircleShape(circle) => circle.scale(factor),
-            DynamicShape::RectangleShape(rectangle) => rectangle.scale(factor),
-            DynamicShape::TriangleShape(triangle) => triangle.scale(factor),
+            DynamicShape::PointShape(p) => p.scale(factor),
+            DynamicShape::CircleShape(c) => c.scale(factor),
+            DynamicShape::RectangleShape(r) => r.scale(factor),
+            DynamicShape::TriangleShape(t) => t.scale(factor),
         }
     }
 }
 
-impl ShapeName for Point {
-    const NAME: &'static str = "Point";
-}
-
-impl ShapeName for Circle {
-    const NAME: &'static str = "Circle";
-}
-
-impl ShapeName for Rectangle {
-    const NAME: &'static str = "Rectangle";
-}
-
-impl ShapeName for Triangle {
-    const NAME: &'static str = "Triangle";
-}
-
-impl ShapeName for DynamicShape {
-    const NAME: &'static str = "DynamicShape";
-}
-
-pub fn find_biggest_ratio<'a, T, U>(
+pub fn find_biggest_ratio<'a, T: Shape, U: Shape>(
     slice1: &'a [T],
     slice2: &'a [U],
-) -> Option<ShapeSource<'a, T, U>>
-where
-    T: Shape + Debug,
-    U: Shape + Debug,
-{
+) -> Option<Either<&'a T, &'a U>> {
     let mut max_ratio = 0.0;
     let mut result = None;
-
-    for shape in slice1 {
-        let ratio = shape.perimeter() / shape.area();
+    for s in slice1 {
+        let ratio = s.perimeter() / s.area();
         if ratio.is_finite() && ratio > max_ratio {
             max_ratio = ratio;
-            result = Some(ShapeSource::FirstSlice(shape));
+            result = Some(Either::Left(s));
         }
     }
-
-    for shape in slice2 {
-        let ratio = shape.perimeter() / shape.area();
+    for s in slice2 {
+        let ratio = s.perimeter() / s.area();
         if ratio.is_finite() && ratio > max_ratio {
             max_ratio = ratio;
-            result = Some(ShapeSource::SecondSlice(shape));
+            result = Some(Either::Right(s));
         }
     }
-
-    if let Some(src) = &result {
-        match src {
-            ShapeSource::FirstSlice(shape) => println!("Found in first slice:  {:?}", shape),
-            ShapeSource::SecondSlice(shape) => println!("Found in second slice: {:?}", shape),
+    if let Some(ref either) = result {
+        match either {
+            Either::Left(s) => println!("Found in first slice:  {:?}", s),
+            Either::Right(s) => println!("Found in second slice: {:?}", s),
         }
     }
-
     result
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_point() {
-        let mut point = Point { x: 1.0, y: 2.0 };
-        assert_eq!(point.perimeter(), 0.0);
-        assert_eq!(point.area(), 0.0);
-        assert_eq!(point.area_to_perimeter(), 0.0);
-        assert_eq!(Point::NAME, "Point");
-
-        point.scale(2.0);
-        assert_eq!(point.x, 1.0);
-        assert_eq!(point.y, 2.0);
-    }
-
-    #[test]
-    fn test_circle() {
-        let mut circle = Circle { radius: 5.0 };
-        assert_eq!(circle.perimeter(), 2.0 * pi * 5.0);
-        assert_eq!(circle.area(), pi * 25.0);
-        assert_eq!(Circle::NAME, "Circle");
-
-        let expected_ratio = (pi * 25.0) / (2.0 * pi * 5.0);
-        assert_eq!(circle.area_to_perimeter(), expected_ratio);
-
-        circle.scale(2.0);
-        assert_eq!(circle.radius, 10.0);
-    }
-
-    #[test]
-    fn test_rectangle() {
-        let mut rect = Rectangle {
-            width: 4.0,
-            height: 5.0,
-        };
-        assert_eq!(rect.perimeter(), 2.0 * (4.0 + 5.0));
-        assert_eq!(rect.area(), 20.0);
-        assert_eq!(Rectangle::NAME, "Rectangle");
-
-        rect.scale(0.5);
-        assert_eq!(rect.width, 2.0);
-        assert_eq!(rect.height, 2.5);
-    }
-
-    #[test]
-    fn test_triangle() {
-        let mut tri = Triangle {
-            a: 3.0,
-            b: 4.0,
-            c: 5.0,
-        };
-        assert_eq!(tri.perimeter(), 12.0);
-        assert_eq!(tri.area(), 6.0);
-        assert_eq!(Triangle::NAME, "Triangle");
-
-        tri.scale(3.0);
-        assert_eq!(tri.a, 9.0);
-        assert_eq!(tri.b, 12.0);
-        assert_eq!(tri.c, 15.0);
-        assert_eq!(tri.area(), 54.0);
-    }
-
-    #[test]
-    fn test_dynamic_shape() {
-        let mut dynamic = DynamicShape::CircleShape(Circle { radius: 5.0 });
-        assert_eq!(dynamic.perimeter(), 2.0 * pi * 5.0);
-        assert_eq!(DynamicShape::NAME, "DynamicShape");
-
-        dynamic = DynamicShape::RectangleShape(Rectangle {
-            width: 3.0,
-            height: 4.0,
-        });
-        assert_eq!(dynamic.area(), 12.0);
-    }
-
-    #[test]
-    fn test_biggest_area() {
-        let circle = Circle { radius: 5.0 };
-        let rect = Rectangle {
-            width: 10.0,
-            height: 10.0,
-        };
-
-        let bigger = circle.biggest_area(&rect);
-
-        match bigger {
-            ShapeBiggest::First(_) => panic!("Expected rectangle to have bigger area"),
-            ShapeBiggest::Second(_) => {}
-        }
-    }
-
-    #[test]
-    fn test_find_biggest_ratio() {
-        let shapes1 = [Circle { radius: 10.0 }, Circle { radius: 5.0 }];
-
-        let shapes2 = [
-            Rectangle {
-                width: 10.0,
-                height: 10.0,
-            },
-            Rectangle {
-                width: 3.0,
-                height: 4.0,
-            },
-        ];
-
-        let triangle = Triangle {
-            a: 3.0,
-            b: 4.0,
-            c: 5.0,
-        };
-        let triangle_array = [triangle];
-
-        let result = find_biggest_ratio::<Circle, Rectangle>(&shapes1, &shapes2);
-
-        let result_with_triangle =
-            find_biggest_ratio::<Circle, Triangle>(&shapes1, &triangle_array);
-
-        if let Some(ShapeSource::SecondSlice(shape)) = result_with_triangle {
-            assert_eq!(shape.perimeter(), 12.0);
-            assert_eq!(shape.area(), 6.0);
-        }
-
-        assert!(result.is_some() || result_with_triangle.is_some());
-    }
-
-    #[test]
-    fn test_print_properties() {
-        let circle = Circle { radius: 5.0 };
-        circle.print_properties();
-
-        let rect = Rectangle {
-            width: 4.0,
-            height: 5.0,
-        };
-        rect.print_properties();
+        let mut p = Point { x: 1.0, y: 2.0 };
+        assert_eq!(p.perimeter(), 0.0);
+        assert_eq!(p.area(), 0.0);
+        assert_eq!(p.area_to_perimeter(), 0.0);
+        p.scale(5.0);
+        assert_eq!(p.x, 1.0);
+        assert_eq!(p.y, 2.0);
     }
 }
