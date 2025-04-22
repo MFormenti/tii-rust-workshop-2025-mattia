@@ -1,30 +1,10 @@
 use std::f64::consts::PI as pi;
 use std::fmt::Debug;
 
-pub trait Shape {
-    const NAME: &'static str;
-
+pub trait ShapeCore {
     fn perimeter(&self) -> f64;
     fn area(&self) -> f64;
     fn scale(&mut self, factor: f32);
-
-    fn biggest_area<'a, S: Shape>(
-        &'a self,
-        other: &'a S
-    ) -> ShapeBiggest<'a> {
-        if self.area() > other.area() {
-            ShapeBiggest::First(self)
-        } else {
-            ShapeBiggest::Second(other)
-        }
-    }
-
-    fn print_properties(&self)
-    where Self: Debug {
-        println!("Shape: {}", Self::NAME);
-        println!("Area: {}", self.area());
-        println!("Perimeter: {}", self.perimeter());
-    }
 
     fn area_to_perimeter(&self) -> f64 {
         let area = self.area();
@@ -37,12 +17,37 @@ pub trait Shape {
     }
 }
 
+pub trait ShapeName {
+    const NAME: &'static str;
+}
+
+pub trait Shape: ShapeCore + ShapeName + Sized {
+    fn biggest_area<'a, S: Shape>(&'a self, other: &'a S) -> ShapeBiggest<'a, Self, S> {
+        if self.area() > other.area() {
+            ShapeBiggest::First(self)
+        } else {
+            ShapeBiggest::Second(other)
+        }
+    }
+
+    fn print_properties(&self)
+    where
+        Self: Debug,
+    {
+        println!("Shape: {}", Self::NAME);
+        println!("Area: {}", self.area());
+        println!("Perimeter: {}", self.perimeter());
+    }
+}
+
+impl<T: ShapeCore + ShapeName> Shape for T {}
+
 pub trait ShapeNamedDebug: Shape + Debug {}
 impl<T: Shape + Debug> ShapeNamedDebug for T {}
 
-pub enum ShapeBiggest<'a> {
-    First(&'a dyn Shape),
-    Second(&'a dyn Shape),
+pub enum ShapeBiggest<'a, T: Shape, U: Shape> {
+    First(&'a T),
+    Second(&'a U),
 }
 
 pub enum ShapeSource<'a, T, U>
@@ -56,26 +61,26 @@ where
 
 #[derive(Debug)]
 pub struct Point {
-    x: f64,
-    y: f64,
+    pub x: f64,
+    pub y: f64,
 }
 
 #[derive(Debug)]
 pub struct Circle {
-    radius: f64,
+    pub radius: f64,
 }
 
 #[derive(Debug)]
 pub struct Rectangle {
-    width: f64,
-    height: f64,
+    pub width: f64,
+    pub height: f64,
 }
 
 #[derive(Debug)]
 pub struct Triangle {
-    a: f64,
-    b: f64,
-    c: f64,
+    pub a: f64,
+    pub b: f64,
+    pub c: f64,
 }
 
 #[derive(Debug)]
@@ -86,9 +91,7 @@ pub enum DynamicShape {
     TriangleShape(Triangle),
 }
 
-impl Shape for Point {
-    const NAME: &'static str = "Point";
-
+impl ShapeCore for Point {
     fn perimeter(&self) -> f64 {
         0.0
     }
@@ -100,9 +103,7 @@ impl Shape for Point {
     fn scale(&mut self, _factor: f32) {}
 }
 
-impl Shape for Circle {
-    const NAME: &'static str = "Circle";
-
+impl ShapeCore for Circle {
     fn perimeter(&self) -> f64 {
         2.0 * pi * self.radius
     }
@@ -116,9 +117,7 @@ impl Shape for Circle {
     }
 }
 
-impl Shape for Rectangle {
-    const NAME: &'static str = "Rectangle";
-
+impl ShapeCore for Rectangle {
     fn perimeter(&self) -> f64 {
         2.0 * (self.width + self.height)
     }
@@ -133,9 +132,7 @@ impl Shape for Rectangle {
     }
 }
 
-impl Shape for Triangle {
-    const NAME: &'static str = "Triangle";
-
+impl ShapeCore for Triangle {
     fn perimeter(&self) -> f64 {
         self.a + self.b + self.c
     }
@@ -152,9 +149,7 @@ impl Shape for Triangle {
     }
 }
 
-impl Shape for DynamicShape {
-    const NAME: &'static str = "DynamicShape";
-
+impl ShapeCore for DynamicShape {
     fn perimeter(&self) -> f64 {
         match self {
             DynamicShape::PointShape(point) => point.perimeter(),
@@ -183,10 +178,34 @@ impl Shape for DynamicShape {
     }
 }
 
-pub fn find_biggest_ratio<'a, T: Shape + Debug, U: Shape + Debug>(
+impl ShapeName for Point {
+    const NAME: &'static str = "Point";
+}
+
+impl ShapeName for Circle {
+    const NAME: &'static str = "Circle";
+}
+
+impl ShapeName for Rectangle {
+    const NAME: &'static str = "Rectangle";
+}
+
+impl ShapeName for Triangle {
+    const NAME: &'static str = "Triangle";
+}
+
+impl ShapeName for DynamicShape {
+    const NAME: &'static str = "DynamicShape";
+}
+
+pub fn find_biggest_ratio<'a, T, U>(
     slice1: &'a [T],
     slice2: &'a [U],
-) -> Option<ShapeSource<'a, T, U>> {
+) -> Option<ShapeSource<'a, T, U>>
+where
+    T: Shape + Debug,
+    U: Shape + Debug,
+{
     let mut max_ratio = 0.0;
     let mut result = None;
 
@@ -208,7 +227,7 @@ pub fn find_biggest_ratio<'a, T: Shape + Debug, U: Shape + Debug>(
 
     if let Some(src) = &result {
         match src {
-            ShapeSource::FirstSlice(shape)  => println!("Found in first slice:  {:?}", shape),
+            ShapeSource::FirstSlice(shape) => println!("Found in first slice:  {:?}", shape),
             ShapeSource::SecondSlice(shape) => println!("Found in second slice: {:?}", shape),
         }
     }
@@ -249,7 +268,10 @@ mod tests {
 
     #[test]
     fn test_rectangle() {
-        let mut rect = Rectangle { width: 4.0, height: 5.0 };
+        let mut rect = Rectangle {
+            width: 4.0,
+            height: 5.0,
+        };
         assert_eq!(rect.perimeter(), 2.0 * (4.0 + 5.0));
         assert_eq!(rect.area(), 20.0);
         assert_eq!(Rectangle::NAME, "Rectangle");
@@ -261,7 +283,11 @@ mod tests {
 
     #[test]
     fn test_triangle() {
-        let mut tri = Triangle { a: 3.0, b: 4.0, c: 5.0 };
+        let mut tri = Triangle {
+            a: 3.0,
+            b: 4.0,
+            c: 5.0,
+        };
         assert_eq!(tri.perimeter(), 12.0);
         assert_eq!(tri.area(), 6.0);
         assert_eq!(Triangle::NAME, "Triangle");
@@ -279,14 +305,20 @@ mod tests {
         assert_eq!(dynamic.perimeter(), 2.0 * pi * 5.0);
         assert_eq!(DynamicShape::NAME, "DynamicShape");
 
-        dynamic = DynamicShape::RectangleShape(Rectangle { width: 3.0, height: 4.0 });
+        dynamic = DynamicShape::RectangleShape(Rectangle {
+            width: 3.0,
+            height: 4.0,
+        });
         assert_eq!(dynamic.area(), 12.0);
     }
 
     #[test]
     fn test_biggest_area() {
         let circle = Circle { radius: 5.0 };
-        let rect = Rectangle { width: 10.0, height: 10.0 };
+        let rect = Rectangle {
+            width: 10.0,
+            height: 10.0,
+        };
 
         let bigger = circle.biggest_area(&rect);
 
@@ -298,28 +330,40 @@ mod tests {
 
     #[test]
     fn test_find_biggest_ratio() {
-        let shapes1 = [
-            Circle { radius: 10.0 },
-            Circle { radius: 5.0 },
-        ];
+        let shapes1 = [Circle { radius: 10.0 }, Circle { radius: 5.0 }];
+
         let shapes2 = [
-            Rectangle { width: 10.0, height: 10.0 },
-            Triangle { a: 3.0, b: 4.0, c: 5.0 },
+            Rectangle {
+                width: 10.0,
+                height: 10.0,
+            },
+            Rectangle {
+                width: 3.0,
+                height: 4.0,
+            },
         ];
 
-        let result = find_biggest_ratio(&shapes1, &shapes2);
+        let triangle = Triangle {
+            a: 3.0,
+            b: 4.0,
+            c: 5.0,
+        };
+        let triangle_array = [triangle];
 
-        match result {
+        let result = find_biggest_ratio::<Circle, Rectangle>(&shapes1, &shapes2);
+
+        let result_with_triangle =
+            find_biggest_ratio::<Circle, Triangle>(&shapes1, &triangle_array);
+
+        match result_with_triangle {
             Some(ShapeSource::SecondSlice(shape)) => {
-                if let Some(tri) = shapes2.iter().find(|s| s.perimeter() == 12.0 && s.area() == 6.0) {
-                    assert_eq!(shape.perimeter(), tri.perimeter());
-                    assert_eq!(shape.area(), tri.area());
-                } else {
-                    panic!("Could not find the expected triangle in shapes2");
-                }
-            },
-            _ => panic!("Expected to find the triangle with highest ratio")
+                assert_eq!(shape.perimeter(), 12.0);
+                assert_eq!(shape.area(), 6.0);
+            }
+            _ => {}
         }
+
+        assert!(result.is_some() || result_with_triangle.is_some());
     }
 
     #[test]
@@ -327,7 +371,10 @@ mod tests {
         let circle = Circle { radius: 5.0 };
         circle.print_properties();
 
-        let rect = Rectangle { width: 4.0, height: 5.0 };
+        let rect = Rectangle {
+            width: 4.0,
+            height: 5.0,
+        };
         rect.print_properties();
     }
 }

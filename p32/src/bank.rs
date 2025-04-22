@@ -3,7 +3,7 @@ use std::fmt;
 pub struct User {
     pub name: String,
     pub credit_line: u64,
-    pub balance: i64
+    pub balance: i64,
 }
 
 pub struct Bank {
@@ -15,15 +15,21 @@ pub struct Bank {
 
 impl fmt::Display for User {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "User: {}, Credit Line: {}, Balance: {}",
-               self.name, self.credit_line, self.balance)
+        write!(
+            f,
+            "User: {}, Credit Line: {}, Balance: {}",
+            self.name, self.credit_line, self.balance
+        )
     }
 }
 
 impl fmt::Display for Bank {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Bank: {}, Credit Interest: {}bp, Debit Interest: {}bp",
-               self.name, self.credit_interest, self.debit_interest)
+        write!(
+            f,
+            "Bank: {}, Credit Interest: {}bp, Debit Interest: {}bp",
+            self.name, self.credit_interest, self.debit_interest
+        )
     }
 }
 
@@ -61,7 +67,9 @@ impl Bank {
             return Err(format!("User '{}' not found", to));
         };
 
-        if self.users[from_index].balance - (amount as i64) < -(self.users[from_index].credit_line as i64) {
+        if self.users[from_index].balance - (amount as i64)
+            < -(self.users[from_index].credit_line as i64)
+        {
             return Err(String::from("Insufficient credit line"));
         }
 
