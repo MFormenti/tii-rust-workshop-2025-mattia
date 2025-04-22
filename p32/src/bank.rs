@@ -1,11 +1,11 @@
+use std::fmt;
 use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
-use std::fmt;
 
 pub struct User {
     pub name: String,
     pub credit_line: u64,
-    pub balance: i64,
+    pub balance: i64
 }
 
 pub struct Bank {
@@ -18,22 +18,16 @@ pub struct Bank {
 // For User
 impl fmt::Display for User {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "User: {}, Credit Line: {}, Balance: {}",
-            self.name, self.credit_line, self.balance
-        )
+        write!(f, "User: {}, Credit Line: {}, Balance: {}",
+               self.name, self.credit_line, self.balance)
     }
 }
 
 // For Bank
 impl fmt::Display for Bank {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Bank: {}, Credit Interest: {}bp, Debit Interest: {}bp",
-            self.name, self.credit_interest, self.debit_interest
-        )
+        write!(f, "Bank: {}, Credit Interest: {}bp, Debit Interest: {}bp",
+               self.name, self.credit_interest, self.debit_interest)
     }
 }
 
@@ -61,20 +55,24 @@ impl Bank {
         let mut asset: u64 = 0;
 
         for user in self.users.values() {
-            if user.balance > 0 {
-                let positive_balance =
-                    u64::try_from(user.balance).expect("Positive balance conversion to u64 failed");
+            match user.balance.cmp(&0) {
+                std::cmp::Ordering::Greater => {
+                    let positive_balance = u64::try_from(user.balance)
+                        .expect("Positive balance conversion to u64 failed");
 
-                liability = liability
-                    .checked_add(positive_balance)
-                    .expect("Liability calculation overflow");
-            } else if user.balance < 0 {
-                let negative_balance = u64::try_from(user.balance.abs())
-                    .expect("Negative balance conversion to u64 failed");
+                    liability = liability.checked_add(positive_balance)
+                        .expect("Liability calculation overflow");
+                },
+                std::cmp::Ordering::Less => {
+                    let negative_balance = u64::try_from(user.balance.abs())
+                        .expect("Negative balance conversion to u64 failed");
 
-                asset = asset
-                    .checked_add(negative_balance)
-                    .expect("Asset calculation overflow");
+                    asset = asset.checked_add(negative_balance)
+                        .expect("Asset calculation overflow");
+                },
+                std::cmp::Ordering::Equal => {
+                    // Zero balance, no effect on liability or asset
+                },
             }
         }
 
@@ -90,8 +88,7 @@ impl Bank {
             return Err(format!("User '{}' not found", to));
         }
 
-        let amount_i64: i64 = amount
-            .try_into()
+        let amount_i64: i64 = amount.try_into()
             .map_err(|_| "Amount too large to process".to_string())?;
 
         {
@@ -101,9 +98,7 @@ impl Bank {
                 return Err("Arithmetic overflow in balance calculation".to_string());
             };
 
-            let credit_line_i64: i64 = from_user
-                .credit_line
-                .try_into()
+            let credit_line_i64: i64 = from_user.credit_line.try_into()
                 .map_err(|_| "Credit line too large to process".to_string())?;
 
             if new_balance < -credit_line_i64 {
@@ -112,9 +107,7 @@ impl Bank {
         }
 
         if let Some(from_user) = self.users.get_mut(from) {
-            from_user.balance = from_user
-                .balance
-                .checked_sub(amount_i64)
+            from_user.balance = from_user.balance.checked_sub(amount_i64)
                 .expect("Arithmetic overflow when deducting from sender");
         }
 
@@ -137,78 +130,42 @@ impl Bank {
         for user in self.users.values_mut() {
             match user.balance.cmp(&0) {
                 std::cmp::Ordering::Less => {
-                    let abs_balance = u64::try_from(user.balance.abs()).map_err(|_| {
-                        format!(
-                            "Balance too large to calculate interest for user {}",
-                            user.name
-                        )
-                    })?;
+                    let abs_balance = u64::try_from(user.balance.abs())
+                        .map_err(|_| format!("Balance too large to calculate interest for user {}", user.name))?;
 
                     let interest = match abs_balance.checked_mul(self.credit_interest) {
                         Some(result) => result / 10000,
-                        None => {
-                            return Err(format!(
-                                "Interest calculation overflow for user {}",
-                                user.name
-                            ));
-                        }
+                        None => return Err(format!("Interest calculation overflow for user {}", user.name))
                     };
 
-                    let interest_i64 = i64::try_from(interest).map_err(|_| {
-                        format!(
-                            "Interest too large to convert to i64 for user {}",
-                            user.name
-                        )
-                    })?;
+                    let interest_i64 = i64::try_from(interest)
+                        .map_err(|_| format!("Interest too large to convert to i64 for user {}", user.name))?;
 
                     user.balance = match user.balance.checked_sub(interest_i64) {
                         Some(result) => result,
-                        None => {
-                            return Err(format!(
-                                "Balance underflow when applying interest for user {}",
-                                user.name
-                            ));
-                        }
+                        None => return Err(format!("Balance underflow when applying interest for user {}", user.name))
                     };
-                }
+                },
                 std::cmp::Ordering::Greater => {
-                    let positive_balance = u64::try_from(user.balance).map_err(|_| {
-                        format!(
-                            "Balance too large to calculate interest for user {}",
-                            user.name
-                        )
-                    })?;
+                    let positive_balance = u64::try_from(user.balance)
+                        .map_err(|_| format!("Balance too large to calculate interest for user {}", user.name))?;
 
                     let interest = match positive_balance.checked_mul(self.debit_interest) {
                         Some(result) => result / 10000,
-                        None => {
-                            return Err(format!(
-                                "Interest calculation overflow for user {}",
-                                user.name
-                            ));
-                        }
+                        None => return Err(format!("Interest calculation overflow for user {}", user.name))
                     };
 
-                    let interest_i64 = i64::try_from(interest).map_err(|_| {
-                        format!(
-                            "Interest too large to convert to i64 for user {}",
-                            user.name
-                        )
-                    })?;
+                    let interest_i64 = i64::try_from(interest)
+                        .map_err(|_| format!("Interest too large to convert to i64 for user {}", user.name))?;
 
                     user.balance = match user.balance.checked_add(interest_i64) {
                         Some(result) => result,
-                        None => {
-                            return Err(format!(
-                                "Balance overflow when applying interest for user {}",
-                                user.name
-                            ));
-                        }
+                        None => return Err(format!("Balance overflow when applying interest for user {}", user.name))
                     };
-                }
+                },
                 std::cmp::Ordering::Equal => {
                     // No interest for zero balance
-                }
+                },
             }
         }
 
@@ -220,7 +177,7 @@ impl Bank {
             if let Some(existing_user) = self.users.get_mut(&name) {
                 existing_user.balance = match existing_user.balance.checked_add(user.balance) {
                     Some(result) => result,
-                    None => return Err(format!("Balance overflow when merging user {}", name)),
+                    None => return Err(format!("Balance overflow when merging user {}", name))
                 };
             } else {
                 self.users.insert(name, user);
@@ -229,12 +186,12 @@ impl Bank {
 
         self.credit_interest = match self.credit_interest.checked_add(other.credit_interest) {
             Some(result) => result / 2,
-            None => return Err("Credit interest overflow during merge".to_string()),
+            None => return Err("Credit interest overflow during merge".to_string())
         };
 
         self.debit_interest = match self.debit_interest.checked_add(other.debit_interest) {
             Some(result) => result / 2,
-            None => return Err("Debit interest overflow during merge".to_string()),
+            None => return Err("Debit interest overflow during merge".to_string())
         };
 
         Ok(())
