@@ -1,4 +1,5 @@
-pub fn christmas_song() -> String {
+mod song;
+pub fn christmas_song() {
     let mut song_lyrics:String = "".to_string();
     let mut day: &str;
     let mut gift:String = "".to_string();
@@ -37,5 +38,5 @@ pub fn christmas_song() -> String {
         song_pattern = format!("On the {} day of Christmas my true love gave to me:\n{}\n", day, gift);
         song_lyrics.push_str(&song_pattern);
     }
-    song_lyrics
+    println!("{}", song_lyrics)
 }

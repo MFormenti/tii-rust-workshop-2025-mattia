@@ -11,7 +11,6 @@ pub fn fibonacci_loop(n:u32) -> u64 {
     let mut b = 1;
     let mut c = 0;
 
-    println!("n: {}",n);
     for _ in 0..n {
         c = a + b;
         a = b;
