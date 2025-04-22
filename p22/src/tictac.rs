@@ -23,7 +23,6 @@ pub struct TicTacToeField {
 }
 
 pub struct Player {
-    name: String,
     symbol: CellState,
 }
 
@@ -131,7 +130,7 @@ impl Clone for TicTacToeField {
 }
 
 impl Player {
-    pub fn new(name: String, symbol: CellState) -> Self {
+    pub fn new(symbol: CellState) -> Self {
         // Ensure symbol is valid (not Empty)
         let valid_symbol = match symbol {
             CellState::Empty => CellState::X, // Default to X if Empty is provided
@@ -139,7 +138,6 @@ impl Player {
         };
 
         Player {
-            name,
             symbol: valid_symbol,
         }
     }
@@ -148,8 +146,8 @@ impl Player {
 // Example usage in a main function
 pub fn tictactoe_example() {
     let mut game = TicTacToeField::new();
-    let player1 = Player::new(String::from("Player 1"), CellState::X);
-    let player2 = Player::new(String::from("Player 2"), CellState::O);
+    let player1 = Player::new(CellState::X);
+    let player2 = Player::new(CellState::O);
 
     // Example game flow
     game = game.make_move(0, 0, &player1).unwrap();
