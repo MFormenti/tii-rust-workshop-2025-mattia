@@ -61,12 +61,12 @@ impl Iterator for SongIter {
 
         // Special case for "and a partridge" in verses after the first day
         if day == 1 {
-            verse.push_str("\n");
+            verse.push('\n');
             verse.push_str(GIFTS[0]);
         } else {
             // Add all gifts for the current day
             for i in (1..=day).rev() {
-                verse.push_str("\n");
+                verse.push('\n');
 
                 // Special case for the last line with "and"
                 if i == 1 {

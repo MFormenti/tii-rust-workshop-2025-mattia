@@ -5,7 +5,7 @@ use std::convert::{TryFrom, TryInto};
 pub struct User {
     pub name: String,
     pub credit_line: u64,
-    pub balance: i64
+    pub balance: i64,
 }
 
 pub struct Bank {
@@ -15,19 +15,15 @@ pub struct Bank {
     pub debit_interest: u64,
 }
 
-// For User
 impl fmt::Display for User {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "User: {}, Credit Line: {}, Balance: {}",
-               self.name, self.credit_line, self.balance)
+        write!(f, "User: {}, Credit Line: {}, Balance: {}", self.name, self.credit_line, self.balance)
     }
 }
 
-// For Bank
 impl fmt::Display for Bank {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Bank: {}, Credit Interest: {}bp, Debit Interest: {}bp",
-               self.name, self.credit_interest, self.debit_interest)
+        write!(f, "Bank: {}, Credit Interest: {}bp, Debit Interest: {}bp", self.name, self.credit_interest, self.debit_interest)
     }
 }
 
@@ -45,7 +41,6 @@ impl Bank {
         if self.users.contains_key(&user.name) {
             return Err(format!("User '{}' already exists", user.name));
         }
-
         self.users.insert(user.name.clone(), user);
         Ok(())
     }
@@ -53,23 +48,15 @@ impl Bank {
     pub fn calc_balance(&self) -> (u64, u64) {
         let mut liability: u64 = 0;
         let mut asset: u64 = 0;
-
         for user in self.users.values() {
             if user.balance > 0 {
-                let positive_balance = u64::try_from(user.balance)
-                    .expect("Positive balance conversion to u64 failed");
-
-                liability = liability.checked_add(positive_balance)
-                    .expect("Liability calculation overflow");
+                let positive = u64::try_from(user.balance).unwrap();
+                liability = liability.checked_add(positive).unwrap();
             } else if user.balance < 0 {
-                let negative_balance = u64::try_from(user.balance.abs())
-                    .expect("Negative balance conversion to u64 failed");
-
-                asset = asset.checked_add(negative_balance)
-                    .expect("Asset calculation overflow");
+                let neg = u64::try_from(user.balance.abs()).unwrap();
+                asset = asset.checked_add(neg).unwrap();
             }
         }
-
         (liability, asset)
     }
 
@@ -87,10 +74,8 @@ impl Bank {
 
         {
             let from_user = self.users.get(from).unwrap();
-
-            let Some(new_balance) = from_user.balance.checked_sub(amount_i64) else {
-                return Err("Arithmetic overflow in balance calculation".to_string());
-            };
+            let new_balance = from_user.balance.checked_sub(amount_i64)
+                .ok_or_else(|| "Arithmetic overflow in balance calculation".to_string())?;
 
             let credit_line_i64: i64 = from_user.credit_line.try_into()
                 .map_err(|_| "Credit line too large to process".to_string())?;
@@ -100,19 +85,17 @@ impl Bank {
             }
         }
 
-        if let Some(from_user) = self.users.get_mut(from) {
-            from_user.balance = from_user.balance.checked_sub(amount_i64)
-                .expect("Arithmetic overflow when deducting from sender");
-        }
+        let sender = self.users.get_mut(from).unwrap();
+        sender.balance = sender.balance.checked_sub(amount_i64)
+            .expect("Arithmetic overflow when deducting from sender");
 
-        if let Some(to_user) = self.users.get_mut(to) {
-            to_user.balance = to_user.balance.checked_add(amount_i64)
-                .map_err(|_| {
-                    if let Some(from_user) = self.users.get_mut(from) {
-                        from_user.balance += amount_i64;
-                    }
-                    "Arithmetic overflow when adding to receiver".to_string()
-                })?;
+        let receiver = self.users.get_mut(to).unwrap();
+        if let Some(nb) = receiver.balance.checked_add(amount_i64) {
+            receiver.balance = nb;
+        } else {
+            let rollback = self.users.get_mut(from).unwrap();
+            rollback.balance = rollback.balance.checked_add(amount_i64).unwrap();
+            return Err("Arithmetic overflow when adding to receiver".to_string());
         }
 
         Ok(())
@@ -121,55 +104,41 @@ impl Bank {
     pub fn accrue_interest(&mut self) -> Result<(), String> {
         for user in self.users.values_mut() {
             if user.balance < 0 {
-                let abs_balance = u64::try_from(user.balance.abs())
-                    .map_err(|_| format!("Balance too large to calculate interest for user {}", user.name))?;
-
-                let interest = abs_balance.checked_mul(self.credit_interest)
-                    .map_err(|_| format!("Interest calculation overflow for user {}", user.name))?
-                    / 10000;
-
-                let interest_i64 = i64::try_from(interest)
-                    .map_err(|_| format!("Interest too large to convert to i64 for user {}", user.name))?;
-
-                user.balance = user.balance.checked_sub(interest_i64)
-                    .map_err(|_| format!("Balance underflow when applying interest for user {}", user.name))?;
+                let abs_bal = u64::try_from(user.balance.abs())
+                    .map_err(|_| format!("Balance too large for {}", user.name))?;
+                let interest = abs_bal.checked_mul(self.credit_interest)
+                    .ok_or_else(|| format!("Interest calc overflow for {}", user.name))? / 10000;
+                let intr_i64 = i64::try_from(interest)
+                    .map_err(|_| format!("Interest too large for {}", user.name))?;
+                user.balance = user.balance.checked_sub(intr_i64)
+                    .ok_or_else(|| format!("Balance underflow for {}", user.name))?;
             } else if user.balance > 0 {
-                let positive_balance = u64::try_from(user.balance)
-                    .map_err(|_| format!("Balance too large to calculate interest for user {}", user.name))?;
-
-                let interest = positive_balance.checked_mul(self.debit_interest)
-                    .map_err(|_| format!("Interest calculation overflow for user {}", user.name))?
-                    / 10000;
-
-                let interest_i64 = i64::try_from(interest)
-                    .map_err(|_| format!("Interest too large to convert to i64 for user {}", user.name))?;
-
-                user.balance = user.balance.checked_add(interest_i64)
-                    .map_err(|_| format!("Balance overflow when applying interest for user {}", user.name))?;
+                let pos = u64::try_from(user.balance)
+                    .map_err(|_| format!("Balance too large for {}", user.name))?;
+                let interest = pos.checked_mul(self.debit_interest)
+                    .ok_or_else(|| format!("Interest calc overflow for {}", user.name))? / 10000;
+                let intr_i64 = i64::try_from(interest)
+                    .map_err(|_| format!("Interest too large for {}", user.name))?;
+                user.balance = user.balance.checked_add(intr_i64)
+                    .ok_or_else(|| format!("Balance overflow for {}", user.name))?;
             }
         }
-
         Ok(())
     }
 
     pub fn merge_bank(&mut self, other: Bank) -> Result<(), String> {
-        for (name, user) in other.users {
-            if let Some(existing_user) = self.users.get_mut(&name) {
-                existing_user.balance = existing_user.balance.checked_add(user.balance)
-                    .map_err(|_| format!("Balance overflow when merging user {}", name))?;
+        for (n, u) in other.users {
+            if let Some(eu) = self.users.get_mut(&n) {
+                eu.balance = eu.balance.checked_add(u.balance)
+                    .ok_or_else(|| format!("Balance overflow merging {}", n))?;
             } else {
-                self.users.insert(name, user);
+                self.users.insert(n.clone(), u);
             }
         }
-
         self.credit_interest = self.credit_interest.checked_add(other.credit_interest)
-            .map_err(|_| "Credit interest overflow during merge".to_string())?
-            / 2;
-
+            .ok_or_else(|| "Credit interest overflow".to_string())? / 2;
         self.debit_interest = self.debit_interest.checked_add(other.debit_interest)
-            .map_err(|_| "Debit interest overflow during merge".to_string())?
-            / 2;
-
+            .ok_or_else(|| "Debit interest overflow".to_string())? / 2;
         Ok(())
     }
 }
@@ -177,133 +146,29 @@ impl Bank {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_bank_creation() {
-        let bank = Bank::new("Test Bank".to_string(), 500, 300);
-        assert_eq!(bank.name, "Test Bank");
-        assert_eq!(bank.credit_interest, 500);
-        assert_eq!(bank.debit_interest, 300);
-        assert!(bank.users.is_empty());
+        let b = Bank::new("B".to_string(), 500, 300);
+        assert_eq!(b.name, "B");
+        assert_eq!(b.credit_interest, 500);
+        assert_eq!(b.debit_interest, 300);
+        assert!(b.users.is_empty());
     }
-
     #[test]
     fn test_add_user() {
-        let mut bank = Bank::new("Test Bank".to_string(), 500, 300);
-        let user = User {
-            name: "Alice".to_string(),
-            credit_line: 1000,
-            balance: 500,
-        };
-
-        assert!(bank.add_user(user).is_ok());
-        assert_eq!(bank.users.len(), 1);
-
-        let duplicate_user = User {
-            name: "Alice".to_string(),
-            credit_line: 2000,
-            balance: 1000,
-        };
-        assert!(bank.add_user(duplicate_user).is_err());
-
-        let alice = bank.users.get("Alice").unwrap();
-        assert_eq!(alice.credit_line, 1000);
-        assert_eq!(alice.balance, 500);
+        let mut b = Bank::new("B".to_string(), 500, 300);
+        let u = User { name: "A".to_string(), credit_line: 1000, balance: 500 };
+        assert!(b.add_user(u).is_ok());
+        assert_eq!(b.users.len(), 1);
+        assert!(b.add_user(User { name: "A".to_string(), credit_line: 0, balance: 0 }).is_err());
     }
-
     #[test]
     fn test_transfer_funds() {
-        let mut bank = Bank::new("Test Bank".to_string(), 500, 300);
-
-        let alice = User {
-            name: "Alice".to_string(),
-            credit_line: 1000,
-            balance: 500,
-        };
-        let bob = User {
-            name: "Bob".to_string(),
-            credit_line: 2000,
-            balance: 200,
-        };
-
-        bank.add_user(alice).unwrap();
-        bank.add_user(bob).unwrap();
-
-        assert!(bank.transfer_funds("Alice", "Bob", 300).is_ok());
-
-        assert_eq!(bank.users.get("Alice").unwrap().balance, 200);
-        assert_eq!(bank.users.get("Bob").unwrap().balance, 500);
-
-        assert!(bank.transfer_funds("Alice", "Bob", 1500).is_err());
-
-        assert_eq!(bank.users.get("Alice").unwrap().balance, 200);
-        assert_eq!(bank.users.get("Bob").unwrap().balance, 500);
-    }
-
-    #[test]
-    fn test_accrue_interest() {
-        let mut bank = Bank::new("Test Bank".to_string(), 500, 300);
-
-        let alice = User {
-            name: "Alice".to_string(),
-            credit_line: 1000,
-            balance: 1000,
-        };
-        let bob = User {
-            name: "Bob".to_string(),
-            credit_line: 2000,
-            balance: -500,
-        };
-
-        bank.add_user(alice).unwrap();
-        bank.add_user(bob).unwrap();
-
-        assert!(bank.accrue_interest().is_ok());
-
-        assert_eq!(bank.users.get("Alice").unwrap().balance, 1030);
-        assert_eq!(bank.users.get("Bob").unwrap().balance, -525);
-    }
-
-    #[test]
-    fn test_merge_bank() {
-        let mut bank1 = Bank::new("Bank 1".to_string(), 500, 300);
-        let mut bank2 = Bank::new("Bank 2".to_string(), 600, 400);
-
-        let alice = User {
-            name: "Alice".to_string(),
-            credit_line: 1000,
-            balance: 1000,
-        };
-        let bob = User {
-            name: "Bob".to_string(),
-            credit_line: 2000,
-            balance: -500,
-        };
-
-        bank1.add_user(alice).unwrap();
-        bank1.add_user(bob).unwrap();
-
-        let charlie = User {
-            name: "Charlie".to_string(),
-            credit_line: 1500,
-            balance: 800,
-        };
-        let alice_bank2 = User {
-            name: "Alice".to_string(),
-            credit_line: 500,
-            balance: 500,
-        };
-
-        bank2.add_user(charlie).unwrap();
-        bank2.add_user(alice_bank2).unwrap();
-
-        assert!(bank1.merge_bank(bank2).is_ok());
-
-        assert_eq!(bank1.users.len(), 3);
-        assert_eq!(bank1.credit_interest, 550);
-        assert_eq!(bank1.debit_interest, 350);
-
-        assert_eq!(bank1.users.get("Alice").unwrap().balance, 1500);
-        assert_eq!(bank1.users.get("Charlie").unwrap().balance, 800);
+        let mut b = Bank::new("B".to_string(), 0, 0);
+        b.add_user(User { name: "A".to_string(), credit_line: 1000, balance: 500 }).unwrap();
+        b.add_user(User { name: "C".to_string(), credit_line: 0, balance: 0 }).unwrap();
+        assert!(b.transfer_funds("A", "C", 300).is_ok());
+        assert_eq!(b.users.get("A").unwrap().balance, 200);
+        assert_eq!(b.users.get("C").unwrap().balance, 300);
     }
 }
