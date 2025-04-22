@@ -112,9 +112,9 @@ pub fn triangle_area(triangle: &Triangle) -> f64 {
 
 /// Calculates the perimeter of the triangle (sum of the three sides)
 pub fn triangle_perimeter(triangle: &Triangle) -> f64 {
-    point_distance(&triangle.a, &triangle.b) +
-        point_distance(&triangle.b, &triangle.c) +
-        point_distance(&triangle.c, &triangle.a)
+    point_distance(&triangle.a, &triangle.b)
+        + point_distance(&triangle.b, &triangle.c)
+        + point_distance(&triangle.c, &triangle.a)
 }
 
 /// A rectangle in 2D space defined by its top-left and bottom-right corners
@@ -138,19 +138,23 @@ pub struct Rectangle {
 /// assert_eq!(rectangle_perimeter(&r), 10.0);
 /// ```
 pub fn rectangle_new(top_left: Point, bottom_right: Point) -> Rectangle {
-    Rectangle { top_left, bottom_right }
+    Rectangle {
+        top_left,
+        bottom_right,
+    }
 }
 
 /// Calculates the perimeter of the rectangle (2 * (width + height))
 pub fn rectangle_perimeter(rectangle: &Rectangle) -> f64 {
-    2.0 * ((rectangle.top_left.x - rectangle.bottom_right.x).abs() +
-        (rectangle.top_left.y - rectangle.bottom_right.y).abs())
+    2.0 * ((rectangle.top_left.x - rectangle.bottom_right.x).abs()
+        + (rectangle.top_left.y - rectangle.bottom_right.y).abs())
 }
 
 /// Calculates the area of the rectangle (width * height)
 pub fn rectangle_area(rectangle: &Rectangle) -> f64 {
-    ((rectangle.top_left.x - rectangle.bottom_right.x) *
-        (rectangle.top_left.y - rectangle.bottom_right.y)).abs()
+    ((rectangle.top_left.x - rectangle.bottom_right.x)
+        * (rectangle.top_left.y - rectangle.bottom_right.y))
+        .abs()
 }
 
 /// An enum representing different geometric shapes
@@ -163,12 +167,7 @@ pub enum Shape {
 
 /// Creates a new Shape from the provided shape type
 pub fn shape_new(shape: Shape) -> Shape {
-    match shape {
-        Shape::Point(p) => Shape::Point(p),
-        Shape::Circle(c) => Shape::Circle(c),
-        Shape::Triangle(t) => Shape::Triangle(t),
-        Shape::Rectangle(r) => Shape::Rectangle(r),
-    }
+    shape
 }
 
 /// Calculates the area of the shape

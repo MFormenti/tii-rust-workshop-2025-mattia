@@ -1,9 +1,9 @@
 pub fn christmas_song() {
-    let mut song_lyrics:String = "".to_string();
+    let mut song_lyrics: String = "".to_string();
     let mut day: &str;
-    let mut gift:String = "".to_string();
-    let mut song_pattern:String;
-    for n in 0..12{
+    let mut gift: String = "".to_string();
+    let mut song_pattern: String;
+    for n in 0..12 {
         match n {
             0 => gift.push_str("a Partridge in a Pear Tree\n"),
             1 => gift.push_str("two Turtle Doves\n"),
@@ -17,7 +17,7 @@ pub fn christmas_song() {
             9 => gift.push_str("ten Lords a Leaping\n"),
             10 => gift.push_str("eleven Pipers Piping\n"),
             11 => gift.push_str("twelve Drummers Drumming\n"),
-            _ => gift.push_str("unknown gift")
+            _ => gift.push_str("unknown gift"),
         }
         match n {
             0 => day = "first",
@@ -32,9 +32,12 @@ pub fn christmas_song() {
             9 => day = "tenth",
             10 => day = "eleventh",
             11 => day = "twelfth",
-            _ => day = "unknown"
+            _ => day = "unknown",
         }
-        song_pattern = format!("On the {} day of Christmas my true love gave to me:\n{}\n", day, gift);
+        song_pattern = format!(
+            "On the {} day of Christmas my true love gave to me:\n{}\n",
+            day, gift
+        );
         song_lyrics.push_str(&song_pattern);
     }
     println!("{}", song_lyrics)

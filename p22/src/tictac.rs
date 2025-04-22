@@ -26,6 +26,12 @@ pub struct Player {
     symbol: CellState,
 }
 
+impl Default for TicTacToeField {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TicTacToeField {
     pub fn new() -> Self {
         TicTacToeField {
@@ -36,9 +42,10 @@ impl TicTacToeField {
     pub fn analyze(&self) -> GameResult {
         // Check for a winner in rows
         for i in 0..3 {
-            if self.field[i][0] != CellState::Empty &&
-                self.field[i][0] == self.field[i][1] &&
-                self.field[i][1] == self.field[i][2] {
+            if self.field[i][0] != CellState::Empty
+                && self.field[i][0] == self.field[i][1]
+                && self.field[i][1] == self.field[i][2]
+            {
                 println!("Winner: {:?}", self.field[i][0]);
                 return GameResult::Winner(self.field[i][0]);
             }
@@ -46,25 +53,28 @@ impl TicTacToeField {
 
         // Check for a winner in columns
         for i in 0..3 {
-            if self.field[0][i] != CellState::Empty &&
-                self.field[0][i] == self.field[1][i] &&
-                self.field[1][i] == self.field[2][i] {
+            if self.field[0][i] != CellState::Empty
+                && self.field[0][i] == self.field[1][i]
+                && self.field[1][i] == self.field[2][i]
+            {
                 println!("Winner: {:?}", self.field[0][i]);
                 return GameResult::Winner(self.field[0][i]);
             }
         }
 
         // Check diagonals
-        if self.field[0][0] != CellState::Empty &&
-            self.field[0][0] == self.field[1][1] &&
-            self.field[1][1] == self.field[2][2] {
+        if self.field[0][0] != CellState::Empty
+            && self.field[0][0] == self.field[1][1]
+            && self.field[1][1] == self.field[2][2]
+        {
             println!("Winner: {:?}", self.field[0][0]);
             return GameResult::Winner(self.field[0][0]);
         }
 
-        if self.field[0][2] != CellState::Empty &&
-            self.field[0][2] == self.field[1][1] &&
-            self.field[1][1] == self.field[2][0] {
+        if self.field[0][2] != CellState::Empty
+            && self.field[0][2] == self.field[1][1]
+            && self.field[1][1] == self.field[2][0]
+        {
             println!("Winner: {:?}", self.field[0][2]);
             return GameResult::Winner(self.field[0][2]);
         }
@@ -123,9 +133,7 @@ impl TicTacToeField {
 
 impl Clone for TicTacToeField {
     fn clone(&self) -> Self {
-        TicTacToeField {
-            field: self.field.clone(),
-        }
+        TicTacToeField { field: self.field }
     }
 }
 
@@ -171,6 +179,6 @@ pub fn tictactoe_example() {
         GameResult::Winner(CellState::O) => println!("Player 2 wins!"),
         GameResult::Draw => println!("It's a draw!"),
         GameResult::InProgress => println!("Game is still in progress."),
-        _ => {},
+        _ => {}
     }
 }

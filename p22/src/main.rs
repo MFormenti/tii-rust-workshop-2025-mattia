@@ -1,7 +1,7 @@
 // Import modules from your own crate
-use p22::figures::{point_new, circle_new, triangle_new, rectangle_new};
-use p22::figures::{point_area, circle_area, triangle_area, rectangle_area};
-use p22::figures::{circle_perimeter, triangle_perimeter, rectangle_perimeter};
+use p22::figures::{circle_area, point_area, rectangle_area, triangle_area};
+use p22::figures::{circle_new, point_new, rectangle_new, triangle_new};
+use p22::figures::{circle_perimeter, rectangle_perimeter, triangle_perimeter};
 
 fn main() {
     println!("Geometric shapes example:");
@@ -11,7 +11,10 @@ fn main() {
     println!("Point area: {}", point_area(&p));
 
     let c = circle_new(p, 3.0);
-    println!("Circle with radius {} at ({}, {})", c.radius, c.center.x, c.center.y);
+    println!(
+        "Circle with radius {} at ({}, {})",
+        c.radius, c.center.x, c.center.y
+    );
     println!("Circle area: {}", circle_area(&c));
     println!("Circle perimeter: {}", circle_perimeter(&c));
 
