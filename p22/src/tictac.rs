@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug)]
 pub enum GameError {
     InvalidMove,
@@ -46,7 +48,6 @@ impl TicTacToeField {
                 && self.field[i][0] == self.field[i][1]
                 && self.field[i][1] == self.field[i][2]
             {
-                println!("Winner: {:?}", self.field[i][0]);
                 return GameResult::Winner(self.field[i][0]);
             }
         }
@@ -57,7 +58,6 @@ impl TicTacToeField {
                 && self.field[0][i] == self.field[1][i]
                 && self.field[1][i] == self.field[2][i]
             {
-                println!("Winner: {:?}", self.field[0][i]);
                 return GameResult::Winner(self.field[0][i]);
             }
         }
@@ -67,7 +67,6 @@ impl TicTacToeField {
             && self.field[0][0] == self.field[1][1]
             && self.field[1][1] == self.field[2][2]
         {
-            println!("Winner: {:?}", self.field[0][0]);
             return GameResult::Winner(self.field[0][0]);
         }
 
@@ -75,7 +74,6 @@ impl TicTacToeField {
             && self.field[0][2] == self.field[1][1]
             && self.field[1][1] == self.field[2][0]
         {
-            println!("Winner: {:?}", self.field[0][2]);
             return GameResult::Winner(self.field[0][2]);
         }
 
@@ -113,21 +111,24 @@ impl TicTacToeField {
         new_field.field[x as usize][y as usize] = player.symbol;
         Ok(new_field)
     }
+}
 
-    // Helper method to display the current state of the board
-    pub fn display(&self) {
-        println!("-------------");
+// Implement Display trait for TicTacToeField
+impl fmt::Display for TicTacToeField {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "-------------")?;
         for row in &self.field {
-            print!("| ");
+            write!(f, "| ")?;
             for cell in row {
                 match cell {
-                    CellState::Empty => print!("  | "),
-                    CellState::X => print!("X | "),
-                    CellState::O => print!("O | "),
+                    CellState::Empty => write!(f, "  | ")?,
+                    CellState::X => write!(f, "X | ")?,
+                    CellState::O => write!(f, "O | ")?,
                 }
             }
-            println!("\n-------------");
+            writeln!(f, "\n-------------")?;
         }
+        Ok(())
     }
 }
 
@@ -148,37 +149,5 @@ impl Player {
         Player {
             symbol: valid_symbol,
         }
-    }
-}
-
-// Example usage in a main function
-pub fn tictactoe_example() {
-    let mut game = TicTacToeField::new();
-    let player1 = Player::new(CellState::X);
-    let player2 = Player::new(CellState::O);
-
-    // Example game flow
-    game = game.make_move(0, 0, &player1).unwrap();
-    game.display();
-
-    game = game.make_move(1, 1, &player2).unwrap();
-    game.display();
-
-    game = game.make_move(0, 1, &player1).unwrap();
-    game.display();
-
-    game = game.make_move(2, 2, &player2).unwrap();
-    game.display();
-
-    game = game.make_move(0, 2, &player1).unwrap();
-    game.display();
-
-    let result = game.analyze();
-    match result {
-        GameResult::Winner(CellState::X) => println!("Player 1 wins!"),
-        GameResult::Winner(CellState::O) => println!("Player 2 wins!"),
-        GameResult::Draw => println!("It's a draw!"),
-        GameResult::InProgress => println!("Game is still in progress."),
-        _ => {}
     }
 }
