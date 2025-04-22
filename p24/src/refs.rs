@@ -1,9 +1,5 @@
 pub fn f1(tuple: &mut (u32, u32), flag: bool) -> &mut u32 {
-    if !flag {
-        &mut tuple.0
-    } else {
-        &mut tuple.1
-    }
+    if !flag { &mut tuple.0 } else { &mut tuple.1 }
 }
 
 pub fn f2(slice: &mut [u32], n: usize) -> &mut u32 {
@@ -11,9 +7,15 @@ pub fn f2(slice: &mut [u32], n: usize) -> &mut u32 {
 }
 
 pub fn f3(slice: &mut [u32], n: usize) -> &mut u32 {
+    if n >= slice.len() {
+        panic!(
+            "Index out of bounds: n ({}) must be less than slice length ({})",
+            n,
+            slice.len()
+        );
+    }
     &mut slice[slice.len() - n - 1]
 }
-
 pub fn f4(slice: &[u32]) -> [&[u32]; 4] {
     let len = slice.len();
     let chunk_size = len / 4;
@@ -23,7 +25,7 @@ pub fn f4(slice: &[u32]) -> [&[u32]; 4] {
         chunk_size + if remainder > 0 { 1 } else { 0 },
         chunk_size + if remainder > 1 { 1 } else { 0 },
         chunk_size + if remainder > 2 { 1 } else { 0 },
-        chunk_size
+        chunk_size,
     ];
 
     let start_1 = 0;
@@ -35,7 +37,7 @@ pub fn f4(slice: &[u32]) -> [&[u32]; 4] {
         &slice[start_1..start_2],
         &slice[start_2..start_3],
         &slice[start_3..start_4],
-        &slice[start_4..len]
+        &slice[start_4..len],
     ]
 }
 

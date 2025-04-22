@@ -28,7 +28,7 @@ fn increased_by_first_item<'a>(data: &[usize], n: &'a mut usize) -> &'a mut usiz
     n
 }
 
-struct TwoValues<'a,'b> {
+struct TwoValues<'a, 'b> {
     first: &'a usize,
     second: &'b usize,
 }
