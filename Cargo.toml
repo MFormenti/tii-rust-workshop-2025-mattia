@@ -2,4 +2,5 @@
 resolver = "3"
 members = [
     "p12",
+    "p22",
 ]
