@@ -1,7 +1,11 @@
 [package]
 name = "p22"
 version = "0.1.0"
-edition = "2024"
+edition = "2024"  # If this works for you, it's fine
 
 [dependencies]
 typenum = "1"
+
+[lib]
+name = "p22"
+path = "src/lib.rs"
