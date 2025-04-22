@@ -1,4 +1,5 @@
 use std::fmt;
+
 pub struct User {
     pub name: String,
     pub credit_line: u64,
@@ -12,7 +13,6 @@ pub struct Bank {
     pub debit_interest: u64,
 }
 
-// For User
 impl fmt::Display for User {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "User: {}, Credit Line: {}, Balance: {}",
@@ -20,7 +20,6 @@ impl fmt::Display for User {
     }
 }
 
-// For Bank
 impl fmt::Display for Bank {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Bank: {}, Credit Interest: {}bp, Debit Interest: {}bp",
@@ -31,7 +30,7 @@ impl fmt::Display for Bank {
 impl Bank {
     pub fn new(name: String, credit_interest: u64, debit_interest: u64) -> Self {
         Bank {
-            name: name,
+            name,
             users: Vec::new(),
             credit_interest,
             debit_interest,
@@ -54,17 +53,12 @@ impl Bank {
     }
 
     pub fn transfer_funds(&mut self, from: String, to: String, amount: u64) -> Result<(), String> {
-
-        let from_index = match self.users.iter().position(|u| u.name == from) {
-            Some(idx) => idx,
-            None => return Err(format!("User '{}' not found", from)),
-
+        let Some(from_index) = self.users.iter().position(|u| u.name == from) else {
+            return Err(format!("User '{}' not found", from));
         };
 
-        let to_index = match self.users.iter().position(|u| u.name == to) {
-            Some(idx) => idx,
-            None => return Err(format!("User '{}' not found", from)),
-
+        let Some(to_index) = self.users.iter().position(|u| u.name == to) else {
+            return Err(format!("User '{}' not found", to));
         };
 
         if self.users[from_index].balance - (amount as i64) < -(self.users[from_index].credit_line as i64) {
@@ -80,10 +74,10 @@ impl Bank {
     pub fn accrue_interest(&mut self) {
         for user in &mut self.users {
             if user.balance < 0 {
-                let interest = (-(user.balance) as u64 * self.credit_interest) / 10000; // Convert basis points to percentage
+                let interest = (-(user.balance) as u64 * self.credit_interest) / 10000;
                 user.balance -= interest as i64;
             } else if user.balance > 0 {
-                let interest = (user.balance as u64 * self.debit_interest) / 10000; // Convert basis points to percentage
+                let interest = (user.balance as u64 * self.debit_interest) / 10000;
                 user.balance += interest as i64;
             }
         }
