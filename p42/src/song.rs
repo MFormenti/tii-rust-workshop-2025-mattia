@@ -1,6 +1,6 @@
 use std::fs::File;
-use std::io::{self, Write, BufRead, BufReader};
-use std::net::{TcpListener, TcpStream, SocketAddr};
+use std::io::{self, BufRead, BufReader, Write};
+use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::path::Path;
 
 // Implement the SongIter type which implements the Iterator trait
@@ -41,8 +41,8 @@ impl Iterator for SongIter {
         ];
 
         const ORDINALS: [&str; 12] = [
-            "first", "second", "third", "fourth", "fifth", "sixth",
-            "seventh", "eighth", "ninth", "tenth", "eleventh", "twelfth",
+            "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth",
+            "tenth", "eleventh", "twelfth",
         ];
 
         // Check if we've reached the end
@@ -57,7 +57,10 @@ impl Iterator for SongIter {
         self.current_day += 1;
 
         // Format the start of the verse
-        let mut verse = format!("On the {} day of Christmas, my true love gave to me:", ORDINALS[day - 1]);
+        let mut verse = format!(
+            "On the {} day of Christmas, my true love gave to me:",
+            ORDINALS[day - 1]
+        );
 
         // Special case for "and a partridge" in verses after the first day
         if day == 1 {
@@ -157,7 +160,7 @@ where
 /// Concatenates the iterator items into one String and returns it
 pub fn song_to_string<I>(iter: I) -> String
 where
-    I: IntoIterator<Item = String>
+    I: IntoIterator<Item = String>,
 {
     iter.into_iter().collect::<Vec<String>>().join("\n\n")
 }
@@ -167,7 +170,7 @@ where
 pub fn song_to_file<I, P>(iter: I, path: P) -> io::Result<()>
 where
     I: IntoIterator<Item = String>,
-    P: AsRef<Path>
+    P: AsRef<Path>,
 {
     let mut file = File::create(path)?;
     for line in iter {
@@ -180,7 +183,7 @@ where
 /// address and writes the iterator strings into it
 pub fn song_to_tcp<I>(iter: I, addr: SocketAddr) -> io::Result<()>
 where
-    I: IntoIterator<Item = String>
+    I: IntoIterator<Item = String>,
 {
     let mut stream = TcpStream::connect(addr)?;
     for line in iter {
@@ -209,7 +212,7 @@ pub fn song_from_tcp(port: u16) -> io::Result<()> {
         match line {
             Ok(line) => {
                 writeln!(handle, "{}", line)?;
-            },
+            }
             Err(e) => {
                 writeln!(handle, "Error reading from connection: {}", e)?;
                 break;
