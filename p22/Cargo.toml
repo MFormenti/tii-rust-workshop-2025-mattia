@@ -5,11 +5,3 @@ edition = "2024"
 
 [dependencies]
 typenum = "1"
-
-[[bin]]
-name = "p22"
-path = "src/main.rs"
-
-[lib]
-name = "p22"
-path = "src/lib.rs"

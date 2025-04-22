@@ -1,4 +1,3 @@
-mod song;
 pub fn christmas_song() {
     let mut song_lyrics:String = "".to_string();
     let mut day: &str;

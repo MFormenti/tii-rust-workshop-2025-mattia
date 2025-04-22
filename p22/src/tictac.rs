@@ -1,11 +1,9 @@
-// First, define your custom error type
 #[derive(Debug)]
 pub enum GameError {
     InvalidMove,
     OutOfBounds,
 }
 
-// Define the possible cell states
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CellState {
     Empty,
@@ -13,7 +11,6 @@ pub enum CellState {
     O,
 }
 
-// Define the possible game outcomes
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum GameResult {
     InProgress,
