@@ -4,7 +4,7 @@ use std::thread;
 
 pub fn map_sum1<const N: usize>(data: Vec<u32>, f: fn(u32) -> u64) -> u64 {
     let len = data.len();
-    let chunk = (len + N - 1) / N;
+    let chunk = len.div_ceil(N);
     let mut handles = Vec::with_capacity(N);
     for slice in data.chunks(chunk) {
         let part = slice.to_vec();
@@ -16,7 +16,7 @@ pub fn map_sum1<const N: usize>(data: Vec<u32>, f: fn(u32) -> u64) -> u64 {
 pub fn map_sum2<const N: usize>(data: Vec<u32>, f: fn(u32) -> u64) -> u64 {
     let counter = Arc::new(AtomicU64::new(0));
     let len = data.len();
-    let chunk = (len + N - 1) / N;
+    let chunk = len.div_ceil(N);
     let mut handles = Vec::with_capacity(N);
     for slice in data.chunks(chunk) {
         let atomic = Arc::clone(&counter);
@@ -36,7 +36,7 @@ pub fn map_sum2<const N: usize>(data: Vec<u32>, f: fn(u32) -> u64) -> u64 {
 pub fn map_sum3<const N: usize>(data: Vec<u32>, f: fn(u32) -> u64) -> u64 {
     let (tx, rx) = mpsc::channel();
     let len = data.len();
-    let chunk = (len + N - 1) / N;
+    let chunk = len.div_ceil(N);
     for slice in data.chunks(chunk) {
         let tx_clone = tx.clone();
         let part = slice.to_vec();
