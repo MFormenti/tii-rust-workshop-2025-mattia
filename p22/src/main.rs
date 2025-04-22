@@ -1,8 +1,7 @@
 // Import modules from your own crate
-use p22::bin::figures::{Point, Circle, Triangle, Rectangle};
-use p22::bin::figures::{point_new, circle_new, triangle_new, rectangle_new};
-use p22::bin::figures::{point_area, circle_area, triangle_area, rectangle_area};
-use p22::bin::figures::{point_perimeter, circle_perimeter, triangle_perimeter, rectangle_perimeter};
+use p22::figures::{point_new, circle_new, triangle_new, rectangle_new};
+use p22::figures::{point_area, circle_area, triangle_area, rectangle_area};
+use p22::figures::{circle_perimeter, triangle_perimeter, rectangle_perimeter};
 
 fn main() {
     println!("Geometric shapes example:");
